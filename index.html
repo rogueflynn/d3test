@@ -79,6 +79,8 @@
             var width = 900,
                 height = 500;
 
+            var barColors = ["#3af43d", "red"]; 
+
             //appends the svg to the chart container div
             var svg = d3.select("div#chartContainer")
                         .append("svg")
@@ -105,7 +107,7 @@
 
             //Sets the color 
             var z = d3.scaleOrdinal()
-                .range(["green", "red"]);
+                .range(barColors);
 
             //Create Axes
             var xAxis = d3.axisBottom(x0);
