@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Test</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <style>
+
+            #chartContainer {
+                position: relative;
+                height: 0;
+                width: 50%;
+                padding: 0;
+                /* padding-bottom will be overwritten by JavaScript later */
+                padding-bottom: 100%;
+            }
+
+            #chartContainer > svg {
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                left: 0;
+                top: 0;
+            }
+
+            .bar {
+                fill: steelblue;
+            }
+
+            .axis text {
+                font: 10px sans-serif;
+            }
+
+            .axis path,
+            .axis line {
+                fill: none;
+                stroke: #000;
+                shape-rendering: crispEdges;
+            }
+
+            .x.axis path {
+                display: none;
+            }
+            .x.axis text {
+                font-weight: bold;
+                font-size: 12px;
+            }
+
+        </style>
+
+    </head>
+    <body>
+        <div id="chartContainer">
+        </div>
+        
+        <script>
+
+            //Mock data
+            var gameScores = [
+                {date: "12-11-2017 8:00PM", values: [90, 10]}, 
+                {date: "12-14-2017 7:00PM", values: [80, 20]}, 
+                {date: "2-14-2018 6:00PM", values: [100, 0]}, 
+                {date: "2-18-2018 4:40PM", values: [60, 40]}, 
+                {date: "3-18-2018 2:20PM", values: [70, 30]}, 
+                {date: "3-20-2018 3:12PM", values: [40, 60]}
+            ];
+
+            var margin = { top: 20, right: 30, bottom: 30, left: 40},
+                        width = 960 - margin.left - margin.right,
+                        height = 500 - margin.top - margin.bottom;
+
+            var width = 900,
+                height = 500;
+
+            //appends the svg to the chart container div
+            var svg = d3.select("div#chartContainer")
+                        .append("svg")
+                        .attr("preserveAspectRatio", "xMinYMin meet")
+                        .attr("viewBox", "0 0 960 500")
+                        .classed("chart", true);
+
+            //Maps the name to the data on the x axis
+            var x0 = d3.scaleBand()
+                .domain(gameScores.map(function(d) { return d.date}))
+                .rangeRound([0, width])
+                .paddingInner(0.1);
+
+            //Groups all data for a row
+            var x1 = d3.scaleBand()
+                .domain([0, 1])
+                .rangeRound([0, x0.bandwidth()])
+                .padding(0.05);
+            
+            //Map the data to the bar
+            var y = d3.scaleLinear()
+                .domain([0, 100])
+                .range([height, 0]);
+
+            //Sets the color 
+            var z = d3.scaleOrdinal()
+                .range(["green", "red"]);
+
+            //Create Axes
+            var xAxis = d3.axisBottom(x0);
+            var yAxis = d3.axisLeft(y).ticks(10).tickFormat(function(d) { return d + "%";});
+
+            //Set the size of the chart
+            var chart = d3.select(".chart")
+                .attr("height", height + margin.top + margin.bottom) 
+                .attr("width", width + margin.left + margin.right)
+                
+            //create global group object
+            var group = chart.append("g")
+                    .attr("transform", "translate(" + margin.left + "," +  margin.top + ")");
+
+            //Draw x axis labels
+            group.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0, " + height + ")")
+                .call(xAxis)
+                .selectAll("text")
+                .attr("dy", ".85em");
+
+            //Draw y axis labels
+            group.append("g")
+                .attr("class", "y axis")
+                .call(yAxis);
+
+            //Creates a bar group based on the date
+            var barGroup = group.append("g").selectAll("g")
+                .data(gameScores)
+                .enter().append("g")
+                    .attr("transform", function(d, i) { return "translate(" + x0(d.date) + ", 0)"; });
+
+            //Draw bars as data is coming in
+            barGroup.selectAll(".bar")
+                .data(function(d) { return d.values})
+                .enter().append("rect")
+                    .attr("class", "bar")
+                    .attr("width", x1.bandwidth())
+                    .attr("height", function(d) { return height - y(d)})
+                    .attr("x", function(d, i) { return x1(i)})
+                    .attr("y", function(d) { return y(d); })
+                    .style("fill", function(d, i) { return z(i) })
+        </script>
+    </body>
+</html>
