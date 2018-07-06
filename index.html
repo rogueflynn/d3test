@@ -13,10 +13,15 @@
         <script src="https://d3js.org/d3.v5.min.js"></script>
         <style>
 
+            .container {
+                margin: auto;
+                width: 50%;
+            }
+
             #chartContainer {
                 position: relative;
                 height: 0;
-                width: 50%;
+                width: 100%;
                 padding: 0;
                 /* padding-bottom will be overwritten by JavaScript later */
                 padding-bottom: 100%;
@@ -28,15 +33,45 @@
                 width: 100%;
                 left: 0;
                 top: 0;
+                padding-top: 20px;
             }
 
             .bar {
                 fill: steelblue;
             }
+            .bar:hover {
+                fill: orange; 
+            }
 
             .axis text {
-                font: 10px sans-serif;
+                font: 1em sans-serif;
             }
+
+            #tooltip {
+                position: absolute;
+                width: 15%;
+                height: auto;
+                padding: 10px;
+                background-color: white;
+                -webkit-border-radius: 10px;
+                -moz-border-radius: 10px;
+                border-radius: 10px;
+                -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+                -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+                box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+                pointer-events: none;
+                z-index: 3;
+            }
+
+            #tooltip.hidden {
+                display: none;
+            }
+
+            #tooltip p {
+                margin: 0;
+                font-family: Futura;
+                font-size: 1em;
+            }   
 
             .axis path,
             .axis line {
@@ -45,9 +80,6 @@
                 shape-rendering: crispEdges;
             }
 
-            .x.axis path {
-                display: none;
-            }
             .x.axis text {
                 font-weight: bold;
                 font-size: 12px;
@@ -57,7 +89,14 @@
 
     </head>
     <body>
-        <div id="chartContainer">
+        <div id="tooltip" class="hidden">
+            <p>
+                <span id="value"></span>
+            </p>
+        </div>
+        <div class="container">
+            <div id="chartContainer">
+            </div>
         </div>
         
         <script>
@@ -76,10 +115,8 @@
                         width = 960 - margin.left - margin.right,
                         height = 500 - margin.top - margin.bottom;
 
-            var width = 900,
-                height = 500;
-
-            var barColors = ["#3af43d", "red"]; 
+            var innerHeight = height - margin.top - margin.bottom,
+            barColors = ["#3af43d", "red"]; 
 
             //appends the svg to the chart container div
             var svg = d3.select("div#chartContainer")
@@ -122,6 +159,26 @@
             var group = chart.append("g")
                     .attr("transform", "translate(" + margin.left + "," +  margin.top + ")");
 
+            //Creates the legend
+            var legend = group.append("g").attr("class", "legend");
+            var legendG = legend.selectAll("g")
+                          .data(["Correct Percentage", "Incorrect Percentage"]) 
+                          .enter().append("g")
+                          .attr("transform", function(d, i) { return "translate(" + (i * (width / 4) )+ ", 0)"})
+
+            legendG.append("rect")
+                .attr("x", 525)
+                .attr("y", -30)
+                .attr("width", 20)
+                .attr("height", 20)
+                .attr("fill", z);
+
+            legendG.append("text")
+                .attr("x", 550)
+                .attr("y", -20)
+                .attr("dy", "0.32em")
+                .text(function(d) { return d; });
+
             //Draw x axis labels
             group.append("g")
                 .attr("class", "x axis")
@@ -145,12 +202,43 @@
             barGroup.selectAll(".bar")
                 .data(function(d) { return d.values})
                 .enter().append("rect")
-                    .attr("class", "bar")
-                    .attr("width", x1.bandwidth())
-                    .attr("height", function(d) { return height - y(d)})
-                    .attr("x", function(d, i) { return x1(i)})
-                    .attr("y", function(d) { return y(d); })
-                    .style("fill", function(d, i) { return z(i) })
+                    .on("mouseover", tipShow) 
+                    .on("mouseout", tipHide)
+                    .attr("y", height)                                          //Set the starting point of the height
+                    .attr("class", "bar")               
+                    .attr("width", x1.bandwidth())                              //Set the width  of the bar group 
+                    .attr("x", function(d, i) { return x1(i)})                  //Set the x position of the bar group
+                    .style("fill", function(d, i) { return z(i) })              //Set the color fill
+                    .transition()                                               //Start the animation
+                        .ease(d3.easeLinear)                                    //Ease into the animation
+                        .duration(700)                                          //Set the speed of the animation
+                        .attr("height", function(d) { return height - y(d)})    //The ending height for the bar 
+                        .attr("y", function(d) { return y(d); });                //The ending y position for the bar
+            
+
+            function tipShow(d, i) {
+                var xPos = this.getBoundingClientRect().x - 70;
+                //var yPos = parseFloat(d3.select(this).attr("y")) / 2 + height / 2;
+                var yPos = this.getBoundingClientRect().y;
+                var textValue = "";
+                if(i === 0) {
+                    textValue = `Student got ${d}% Correct Scores`;                   
+                } else {
+                    textValue = `Student got ${d}% Incorrect Scores`;                   
+                }
+                d3.select("#tooltip")
+                    .style("left", xPos + "px")
+                    .style("top", yPos + "px")
+                    .select("#value")
+                    .text(textValue);
+
+                d3.select("#tooltip").classed("hidden", false);
+            }
+
+            function tipHide(d) {
+                d3.select("#tooltip").classed("hidden", true);
+            }
+
         </script>
     </body>
 </html>
